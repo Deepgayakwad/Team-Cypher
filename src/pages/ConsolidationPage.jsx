@@ -9,7 +9,14 @@ export default function ConsolidationPage() {
   const [result, setResult] = useState(null)
   const [error, setError] = useState('')
   const [isLoading, setIsLoading] = useState(false)
+  const [isApplying, setIsApplying] = useState(false)
+  const [successMsg, setSuccessMsg] = useState('')
   const [currentStep, setCurrentStep] = useState(1)
+  const [consolidatedName, setConsolidatedName] = useState(() => {
+    const d = new Date()
+    const pad = (n) => String(n).padStart(2, '0')
+    return `Consolidated Loan ${d.getFullYear()}-${pad(d.getMonth()+1)}-${pad(d.getDate())}`
+  })
 
   useEffect(() => { 
     LoansAPI.list().then(setLoans).catch(() => setError('Failed to load loans'))
@@ -32,12 +39,15 @@ export default function ConsolidationPage() {
     e.preventDefault()
     setIsLoading(true)
     setError('')
+    setSuccessMsg('')
     
     try {
       const data = await ConsolidationAPI.consolidate({
         loanIds: selected,
         tenureMonths: parseInt(tenureMonths),
-        newInterestRate: parseFloat(newInterestRate)
+        newInterestRate: parseFloat(newInterestRate),
+        dryRun: true,
+        lenderName: consolidatedName
       })
       setResult(data)
       setCurrentStep(3)
@@ -45,6 +55,26 @@ export default function ConsolidationPage() {
       setError('Consolidation simulation failed. Please try again.')
     } finally {
       setIsLoading(false)
+    }
+  }
+
+  const applyConsolidation = async () => {
+    setIsApplying(true)
+    setError('')
+    setSuccessMsg('')
+    try {
+      await ConsolidationAPI.consolidate({
+        loanIds: selected,
+        tenureMonths: parseInt(tenureMonths),
+        newInterestRate: parseFloat(newInterestRate),
+        dryRun: false,
+        lenderName: consolidatedName
+      })
+      setSuccessMsg('Consolidation applied. A new consolidated loan has been created.')
+    } catch (e) {
+      setError('Failed to apply consolidation. Please try again.')
+    } finally {
+      setIsApplying(false)
     }
   }
 
@@ -99,10 +129,10 @@ export default function ConsolidationPage() {
         </div>
       </div>
 
-      {error && (
+      {(error || successMsg) && (
         <div className="alert alert-error">
-          <span className="alert-icon">⚠️</span>
-          {error}
+          {error && (<><span className="alert-icon">⚠️</span>{error}</>)}
+          {successMsg && (<div style={{color:'#065f46'}}><span className="alert-icon">✅</span>{successMsg}</div>)}
         </div>
       )}
 
@@ -123,13 +153,13 @@ export default function ConsolidationPage() {
           </div>
 
           <div className="loan-list">
-            {loans.length === 0 ? (
+            {loans.filter(l => l.status !== 'Closed_Consolidated').length === 0 ? (
               <div className="empty-state">
                 <div className="empty-icon">💳</div>
                 <p>No loans available for consolidation</p>
               </div>
             ) : (
-              loans.map(loan => (
+              loans.filter(l => l.status !== 'Closed_Consolidated').map(loan => (
                 <div 
                   key={loan.loanId} 
                   className={`loan-card ${selected.includes(loan.loanId) ? 'selected' : ''}`}
@@ -205,6 +235,14 @@ export default function ConsolidationPage() {
                       <span className="input-suffix">months</span>
                     </div>
                   </div>
+                </div>
+
+                <div className="form-group">
+                  <label className="form-label">
+                    <span className="label-text">Consolidated Loan Name</span>
+                    <span className="label-hint">Shown in Loans list after you apply</span>
+                  </label>
+                  <input className="form-input" value={consolidatedName} onChange={e => setConsolidatedName(e.target.value)} />
                 </div>
 
                 <button 
@@ -313,9 +351,9 @@ export default function ConsolidationPage() {
 
                 {/* Action Buttons */}
                 <div className="action-buttons">
-                  <button className="btn btn-primary">
+                  <button className={`btn btn-primary ${isApplying ? 'loading' : ''}`} onClick={applyConsolidation} disabled={isApplying}>
                     <span className="btn-icon">📄</span>
-                    Apply for Consolidation
+                    {isApplying ? 'Applying...' : 'Apply for Consolidation'}
                   </button>
                   <button className="btn btn-secondary" onClick={() => {
                     setSelected([])

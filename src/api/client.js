@@ -15,18 +15,14 @@ export const LoansAPI = {
   add: async (userId, payload) => {
     await api.post(`/loans/${userId}`, payload);
   },
-  deleteAll: async () => {
-    await api.delete('/delete');
+  deleteById: async (id) => {
+    await api.delete(`/delete/${id}`);
   },
 };
 
 export const ConsolidationAPI = {
-  consolidate: async ({ loanIds, tenureMonths, newInterestRate }) => {
-    const { data } = await api.post('/consolidate', {
-      loanIds,
-      tenureMonths,
-      newInterestRate,
-    });
+  consolidate: async (payload) => {
+    const { data } = await api.post('/consolidate', payload);
     return data;
   },
 };

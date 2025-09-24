@@ -39,8 +39,10 @@ export default function LoansPage() {
     }
   }
 
-  const clearAll = async () => {
-    await LoansAPI.deleteAll()
+  const deleteOne = async (loanId) => {
+    const ok = window.confirm('Delete this loan? This cannot be undone.')
+    if (!ok) return
+    await LoansAPI.deleteById(loanId)
     load()
   }
 
@@ -106,7 +108,6 @@ export default function LoansPage() {
         <div className="card">
           <div className="panel-header" style={{borderTopLeftRadius:16,borderTopRightRadius:16}}>
             <div className="panel-title"><span className="panel-icon">📋</span>Existing Loans</div>
-            <button className="btn btn-danger" onClick={clearAll}><span className="btn-icon">🗑️</span>Delete All</button>
           </div>
           <table className="table">
             <thead>
@@ -116,6 +117,7 @@ export default function LoansPage() {
                 <th>Rate</th>
                 <th>Tenure</th>
                 <th>Status</th>
+                <th>Actions</th>
               </tr>
             </thead>
             <tbody>
@@ -126,6 +128,11 @@ export default function LoansPage() {
                   <td>{l.interestRate}%</td>
                   <td>{l.tenureMonths}m</td>
                   <td><span className={`status-badge ${String(l.status || '').toLowerCase()}`}>{l.status || 'Active'}</span></td>
+                  <td>
+                    <button className="btn btn-danger" onClick={() => deleteOne(l.loanId ?? i)}>
+                      <span className="btn-icon">🗑️</span> Delete
+                    </button>
+                  </td>
                 </tr>
               ))}
             </tbody>
