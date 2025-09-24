@@ -28,56 +28,106 @@ export default function DashboardPage() {
     return loans.map((l, idx) => ({ name: l.lenderName || `Loan ${idx+1}`, principal: l.principalAmount }))
   }, [loans])
 
-  if (loading) return <div>Loading...</div>
-  if (error) return <div>{error}</div>
+  if (error) return <div className="alert alert-error"><span className="alert-icon">⚠️</span>{error}</div>
 
   return (
-    <div>
-      <section className="hero">
-        <div className="container">
-          <h1>Compare, plan, and conquer your debt</h1>
-          <p>Consolidate loans, simulate EMIs, and find the best path to zero.</p>
-          <div>
-            <a className="btn" href="/loans">Add a Loan</a>
-            <a className="btn secondary" style={{marginLeft:8}} href="/consolidation">Try Consolidation</a>
+    <div className="dashboard-page">
+      <section className="dashboard-hero">
+        <div className="dashboard-hero-inner">
+          <div className="hero-text">
+            <h1>Compare, plan, and conquer your debt</h1>
+            <p>Consolidate loans, simulate EMIs, and find the best path to zero.</p>
+            <div className="hero-actions">
+              <a className="btn" href="/loans"><span className="btn-icon">➕</span>Add a Loan</a>
+              <a className="btn secondary" href="/consolidation"><span className="btn-icon">🧮</span>Try Consolidation</a>
+            </div>
+          </div>
+          <div className="hero-kpis">
+            <div className="kpi-card">
+              <div className="kpi-icon">💰</div>
+              <div className="kpi-meta">
+                <div className="kpi-value">₹ {totals.totalPrincipal.toLocaleString()}</div>
+                <div className="kpi-label">Total Principal</div>
+              </div>
+            </div>
+            <div className="kpi-card">
+              <div className="kpi-icon">📄</div>
+              <div className="kpi-meta">
+                <div className="kpi-value">{totals.active}</div>
+                <div className="kpi-label">Active Loans</div>
+              </div>
+            </div>
+            <div className="kpi-card">
+              <div className="kpi-icon">📈</div>
+              <div className="kpi-meta">
+                <div className="kpi-value">{totals.avgRate.toFixed(2)}%</div>
+                <div className="kpi-label">Average Interest</div>
+              </div>
+            </div>
           </div>
         </div>
       </section>
-      <div className="cards">
-        <div className="card stat"><strong>₹ {totals.totalPrincipal.toFixed(2)}</strong>Total Principal</div>
-        <div className="card stat"><strong>{totals.active}</strong>Active Loans</div>
-        <div className="card stat"><strong>{totals.avgRate.toFixed(2)}%</strong>Avg Interest</div>
-      </div>
-      <div className="card" style={{ height: 320 }}>
-        <ResponsiveContainer width="100%" height="100%">
-          <AreaChart data={chartData}>
-            <defs>
-              <linearGradient id="colorP" x1="0" y1="0" x2="0" y2="1">
-                <stop offset="5%" stopColor="#8884d8" stopOpacity={0.8}/>
-                <stop offset="95%" stopColor="#8884d8" stopOpacity={0}/>
-              </linearGradient>
-            </defs>
-            <XAxis dataKey="name" />
-            <YAxis />
-            <CartesianGrid strokeDasharray="3 3" />
-            <Tooltip />
-            <Area type="monotone" dataKey="principal" stroke="#8884d8" fillOpacity={1} fill="url(#colorP)" />
-          </AreaChart>
-        </ResponsiveContainer>
-      </div>
 
-      <h2 style={{marginTop:24}}>Your Loans</h2>
-      <div className="cards" style={{gridTemplateColumns:'repeat(3, minmax(0, 1fr))'}}>
-        {loans.map((l, i) => (
-          <Link key={i} to={`/loans/${l.loanId || i}`} className="card" style={{display:'block'}}>
-            <div style={{fontWeight:700}}>{l.lenderName || 'Loan'}</div>
-            <div className="stat"><strong>₹ {Number(l.principalAmount).toFixed(2)}</strong>Principal</div>
-            <div className="stat"><strong>{l.interestRate}%</strong>Interest</div>
-            <div className="stat"><strong>{l.tenureMonths} months</strong>Tenure</div>
-            <div className="stat"><strong>{l.status}</strong>Status</div>
-          </Link>
-        ))}
-      </div>
+      <section className="dashboard-grid">
+        <div className="chart-card">
+          <div className="chart-header">
+            <h3>Principal by Loan</h3>
+            <span className="chart-subtitle">Distribution of outstanding principal</span>
+          </div>
+          <div className="chart-body">
+            {loading ? (
+              <div className="chart-skeleton" />
+            ) : (
+              <ResponsiveContainer width="100%" height={320}>
+                <AreaChart data={chartData} margin={{ top: 6, right: 24, left: 0, bottom: 0 }}>
+                  <defs>
+                    <linearGradient id="colorP" x1="0" y1="0" x2="0" y2="1">
+                      <stop offset="5%" stopColor="#24a86a" stopOpacity={0.7}/>
+                      <stop offset="95%" stopColor="#24a86a" stopOpacity={0.05}/>
+                    </linearGradient>
+                  </defs>
+                  <XAxis dataKey="name" tick={{ fontSize: 12 }} />
+                  <YAxis tick={{ fontSize: 12 }} />
+                  <CartesianGrid strokeDasharray="3 3" />
+                  <Tooltip cursor={{ stroke: '#24a86a', strokeDasharray: '4 4' }} />
+                  <Area type="monotone" dataKey="principal" stroke="#1f8e59" strokeWidth={2} fillOpacity={1} fill="url(#colorP)" />
+                </AreaChart>
+              </ResponsiveContainer>
+            )}
+          </div>
+        </div>
+
+        <div className="loans-card">
+          <div className="loans-header">
+            <h3>Your Loans</h3>
+            <Link className="btn secondary" to="/loans"><span className="btn-icon">➕</span>Add</Link>
+          </div>
+          <div className="loans-grid">
+            {loans.length === 0 ? (
+              <div className="empty-state">
+                <div className="empty-icon">💳</div>
+                <p>No loans added yet</p>
+              </div>
+            ) : (
+              loans.map((l, i) => (
+                <Link key={i} to={`/loans/${l.loanId || i}`} className="loan-mini-card">
+                  <div className="loan-mini-top">
+                    <div className="loan-mini-title">{l.lenderName || 'Loan'}</div>
+                    <span className={`status-badge ${l.status?.toLowerCase() || 'active'}`}>
+                      {l.status || 'Active'}
+                    </span>
+                  </div>
+                  <div className="loan-mini-metrics">
+                    <div><span className="metric-label">Principal</span><span className="metric-value">₹ {Number(l.principalAmount).toLocaleString()}</span></div>
+                    <div><span className="metric-label">Interest</span><span className="metric-value">{l.interestRate}%</span></div>
+                    <div><span className="metric-label">Tenure</span><span className="metric-value">{l.tenureMonths}m</span></div>
+                  </div>
+                </Link>
+              ))
+            )}
+          </div>
+        </div>
+      </section>
     </div>
   )
 }
