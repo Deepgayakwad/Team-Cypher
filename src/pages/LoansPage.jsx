@@ -7,7 +7,7 @@ export default function LoansPage() {
   const [error, setError] = useState('')
 
   const [form, setForm] = useState({
-    lenderName: '', principalAmount: '', interestRate: '', tenureMonths: '', loanType: 'Personal'
+    lenderName: '', principalAmount: '', interestRate: '', tenureMonths: '', loanType: 'Personal', startDate: ''
   })
 
   const load = () => {
@@ -28,10 +28,11 @@ export default function LoansPage() {
         principalAmount: parseFloat(form.principalAmount),
         interestRate: parseFloat(form.interestRate),
         tenureMonths: parseInt(form.tenureMonths),
-        loanType: form.loanType
+        loanType: form.loanType,
+        ...(form.startDate ? { startDate: form.startDate } : {})
       }
       await LoansAPI.add(1, payload) // using userId=1 for now
-      setForm({ lenderName: '', principalAmount: '', interestRate: '', tenureMonths: '', loanType: 'Personal' })
+      setForm({ lenderName: '', principalAmount: '', interestRate: '', tenureMonths: '', loanType: 'Personal', startDate: '' })
       load()
     } catch (e) {
       setError('Failed to add loan')
@@ -45,45 +46,67 @@ export default function LoansPage() {
 
   if (loading) return <div>Loading...</div>
   return (
-    <div>
-      <h1>Loans</h1>
-      {error && <div className="error">{error}</div>}
+    <div className="loans-page">
+      <div className="page-header" style={{marginBottom:16}}>
+        <div className="header-content" style={{marginBottom:0}}>
+          <h1 className="page-title"><span className="title-icon">💳</span> Loans</h1>
+          <p className="page-subtitle">Add your loans and track them in one place</p>
+        </div>
+      </div>
+      {error && <div className="alert alert-error"><span className="alert-icon">⚠️</span>{error}</div>}
       <div className="grid-2">
         <div className="card">
-          <h3>Add Loan</h3>
-          <form onSubmit={submit} className="form">
-            <label>
-              Lender Name
-              <input value={form.lenderName} onChange={e=>setForm({...form, lenderName:e.target.value})} required />
-            </label>
-            <label>
-              Principal Amount
-              <input type="number" step="0.01" value={form.principalAmount} onChange={e=>setForm({...form, principalAmount:e.target.value})} required />
-            </label>
-            <label>
-              Interest Rate (%)
-              <input type="number" step="0.01" value={form.interestRate} onChange={e=>setForm({...form, interestRate:e.target.value})} required />
-            </label>
-            <label>
-              Tenure (months)
-              <input type="number" value={form.tenureMonths} onChange={e=>setForm({...form, tenureMonths:e.target.value})} required />
-            </label>
-            <label>
-              Loan Type
-              <select value={form.loanType} onChange={e=>setForm({...form, loanType:e.target.value})}>
+          <h3 style={{marginTop:0}}>Add Loan</h3>
+          <form onSubmit={submit} className="consolidation-form">
+            <div className="form-group">
+              <label className="form-label"><span className="label-text">Lender Name</span></label>
+              <input className="form-input" placeholder="e.g., HDFC Bank" value={form.lenderName} onChange={e=>setForm({...form, lenderName:e.target.value})} required />
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label"><span className="label-text">Principal Amount</span></label>
+                <div className="input-wrapper">
+                  <input className="form-input" type="number" step="0.01" min="0" placeholder="e.g., 250000" value={form.principalAmount} onChange={e=>setForm({...form, principalAmount:e.target.value})} required />
+                  <span className="input-suffix">₹</span>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label"><span className="label-text">Interest Rate</span><span className="label-hint">Annual %</span></label>
+                <div className="input-wrapper">
+                  <input className="form-input" type="number" step="0.01" min="0" max="50" placeholder="e.g., 10" value={form.interestRate} onChange={e=>setForm({...form, interestRate:e.target.value})} required />
+                  <span className="input-suffix">%</span>
+                </div>
+              </div>
+            </div>
+            <div className="form-row">
+              <div className="form-group">
+                <label className="form-label"><span className="label-text">Tenure</span></label>
+                <div className="input-wrapper">
+                  <input className="form-input" type="number" min="1" max="480" placeholder="in months" value={form.tenureMonths} onChange={e=>setForm({...form, tenureMonths:e.target.value})} required />
+                  <span className="input-suffix">months</span>
+                </div>
+              </div>
+              <div className="form-group">
+                <label className="form-label"><span className="label-text">Start Date</span><span className="label-hint">Optional</span></label>
+                <input className="form-input" type="date" value={form.startDate} onChange={e=>setForm({...form, startDate:e.target.value})} />
+              </div>
+            </div>
+            <div className="form-group">
+              <label className="form-label"><span className="label-text">Loan Type</span></label>
+              <select className="form-input" value={form.loanType} onChange={e=>setForm({...form, loanType:e.target.value})}>
                 <option>Personal</option>
                 <option>Home</option>
                 <option>Auto</option>
                 <option>Education</option>
               </select>
-            </label>
-            <button type="submit">Add Loan</button>
+            </div>
+            <button type="submit" className="simulate-btn"><span className="btn-icon">➕</span>Add Loan</button>
           </form>
         </div>
         <div className="card">
-          <div style={{display:'flex',justifyContent:'space-between',alignItems:'center'}}>
-            <h3>Existing Loans</h3>
-            <button onClick={clearAll}>Delete All</button>
+          <div className="panel-header" style={{borderTopLeftRadius:16,borderTopRightRadius:16}}>
+            <div className="panel-title"><span className="panel-icon">📋</span>Existing Loans</div>
+            <button className="btn btn-danger" onClick={clearAll}><span className="btn-icon">🗑️</span>Delete All</button>
           </div>
           <table className="table">
             <thead>
@@ -99,10 +122,10 @@ export default function LoansPage() {
               {loans.map((l, i) => (
                 <tr key={i}>
                   <td>{l.lenderName}</td>
-                  <td>₹ {l.principalAmount}</td>
+                  <td>₹ {Number(l.principalAmount).toLocaleString()}</td>
                   <td>{l.interestRate}%</td>
                   <td>{l.tenureMonths}m</td>
-                  <td>{l.status}</td>
+                  <td><span className={`status-badge ${String(l.status || '').toLowerCase()}`}>{l.status || 'Active'}</span></td>
                 </tr>
               ))}
             </tbody>

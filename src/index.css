@@ -720,6 +720,15 @@ button:focus-visible {
   transform: translateY(-1px);
 }
 
+.btn-danger {
+  background: #ef4444;
+  color: #fff;
+}
+.btn-danger:hover {
+  background: #dc2626;
+  transform: translateY(-1px);
+}
+
 /* Responsive Design */
 @media (max-width: 1200px) {
   .consolidation-content {
@@ -785,6 +794,8 @@ button:focus-visible {
 
 /* ===== DASHBOARD PAGE STYLES ===== */
 .dashboard-page { max-width: 1120px; margin: 0 auto; padding: 0 20px 48px; }
+
+.loans-page { max-width: 1120px; margin: 0 auto; padding: 0 20px 48px; }
 
 .dashboard-hero { margin-top: 16px; }
 .dashboard-hero-inner {
