@@ -18,14 +18,17 @@ export default function DashboardPage() {
   }, [])
 
   const totals = useMemo(() => {
-    const totalPrincipal = loans.reduce((s, l) => s + (l.principalAmount || 0), 0)
-    const active = loans.filter(l => l.status !== 'Closed_Consolidated').length
+    const activeLoans = loans.filter(l => l.status !== 'Closed_Consolidated')
+    const totalPrincipal = activeLoans.reduce((s, l) => s + (l.principalAmount || 0), 0)
+    const active = activeLoans.length
     const avgRate = loans.length ? (loans.reduce((s, l) => s + (l.interestRate || 0), 0) / loans.length) : 0
     return { totalPrincipal, active, avgRate }
   }, [loans])
 
   const chartData = useMemo(() => {
-    return loans.map((l, idx) => ({ name: l.lenderName || `Loan ${idx+1}`, principal: l.principalAmount }))
+    return loans
+      .filter(l => l.status !== 'Closed_Consolidated')
+      .map((l, idx) => ({ name: l.lenderName || `Loan ${idx+1}`, principal: l.principalAmount }))
   }, [loans])
 
   if (error) return <div className="alert alert-error"><span className="alert-icon">⚠️</span>{error}</div>
