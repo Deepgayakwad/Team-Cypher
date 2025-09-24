@@ -1,5 +1,7 @@
 import { useState } from "react";
 import LoanCard from './LoanCard';
+import Report from './Report';
+import { enrichLoansForReport } from '../utils/loanCalculator';
 
 export default function LoanForm() {
   const [formData, setFormData] = useState({
@@ -13,23 +15,43 @@ export default function LoanForm() {
   });
 
   const [submittedLoans, setSubmittedLoans] = useState([]);
+  const [isSubmitting, setIsSubmitting] = useState(false);
+  const [isComparing, setIsComparing] = useState(false);
+  const [reportLoans, setReportLoans] = useState([]);
 
   const handleChange = (e) => {
     setFormData({ ...formData, [e.target.name]: e.target.value });
   };
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
-    setSubmittedLoans([...submittedLoans, formData]);
-    setFormData({
-      loan_id: "",
-      lender_name: "",
-      loan_type: "",
-      principal_amount: "",
-      interest_rate: "",
-      tenure: "",
-      start_date: "",
-    });
+    setIsSubmitting(true);
+    try {
+      const loanToSubmit = { ...formData };
+      setSubmittedLoans((prev) => [...prev, loanToSubmit]);
+    } finally {
+      setIsSubmitting(false);
+      setFormData({
+        loan_id: "",
+        lender_name: "",
+        loan_type: "",
+        principal_amount: "",
+        interest_rate: "",
+        tenure: "",
+        start_date: "",
+      });
+    }
+  };
+
+  const handleCompare = () => {
+    if (submittedLoans.length < 2) return;
+    setIsComparing(true);
+    try {
+      const enriched = enrichLoansForReport(submittedLoans);
+      setReportLoans(enriched);
+    } finally {
+      setIsComparing(false);
+    }
   };
 
   return (
@@ -132,9 +154,10 @@ export default function LoanForm() {
             <div className="md:col-span-2 text-center mt-4">
               <button
                 type="submit"
-                className="bg-green-500 hover:bg-green-600 text-white font-semibold px-6 py-2 rounded-xl shadow-md transition"
+                disabled={isSubmitting}
+                className="bg-green-500 hover:bg-green-600 disabled:opacity-60 text-white font-semibold px-6 py-2 rounded-xl shadow-md transition"
               >
-                Submit
+                {isSubmitting ? 'Submitting...' : 'Submit'}
               </button>
             </div>
           </form>
@@ -153,9 +176,18 @@ export default function LoanForm() {
       {/* Compare Button: Only show if 2 or more loans */}
       {submittedLoans.length >= 2 && (
         <div className="w-full flex justify-center mb-6">
-          <button className="bg-blue-500 hover:bg-blue-600 text-white font-semibold px-6 py-2 rounded-xl shadow-md transition">
-            Compare
+          <button onClick={handleCompare} disabled={isComparing} className="bg-blue-500 hover:bg-blue-600 disabled:opacity-60 text-white font-semibold px-6 py-2 rounded-xl shadow-md transition">
+            {isComparing ? 'Comparing...' : 'Compare'}
           </button>
+        </div>
+      )}
+
+      {/* Report below Compare button */}
+      {reportLoans?.length > 0 && (
+        <div className="w-full flex justify-center mb-10 px-4">
+          <div className="w-full max-w-6xl">
+            <Report loans={reportLoans} />
+          </div>
         </div>
       )}
     </div>
